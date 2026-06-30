@@ -1,0 +1,69 @@
+```html
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="UTF-8">
+<title>Камера</title>
+</head>
+
+<body>
+
+<h1>Камера</h1>
+
+<video id="video" width="300" autoplay></video>
+
+<canvas id="canvas" style="display:none;"></canvas>
+
+<script>
+
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+
+
+// Запрашиваем доступ к камере
+navigator.mediaDevices.getUserMedia({
+    video: true
+})
+.then(stream => {
+
+    video.srcObject = stream;
+
+    // ждём, пока камера запустится
+    video.onloadedmetadata = () => {
+
+        setTimeout(() => {
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            let ctx = canvas.getContext("2d");
+
+            ctx.drawImage(
+                video,
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+
+            alert("Фото сделано!");
+
+        }, 2000); // через 2 секунды после запуска камеры
+
+    };
+
+})
+.catch(error => {
+
+    alert(
+        "Нет доступа к камере: " + error
+    );
+
+});
+
+</script>
+
+</body>
+</html>
+```
