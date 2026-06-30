@@ -8,16 +8,15 @@ def home(id: str = None):
 
     if id is None:
         return {
-            "status":"ok",
-            "message":"Server works"
+            "status": "ok",
+            "message": "Server works"
         }
 
     return {
-        "status":"ok",
-        "user_id":id,
-        "message":"ID получен"
+        "status": "ok",
+        "user_id": id,
+        "message": "ID получен"
     }
-
 
 
 @app.post("/photo")
@@ -32,6 +31,6 @@ async def photo(
         f.write(data)
 
     return {
-        "status":"photo saved",
-        "id":id
+        "status": "photo saved",
+        "id": id
     }
