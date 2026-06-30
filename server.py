@@ -1,20 +1,32 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, UploadFile, File, Form
 
 app = FastAPI()
 
 
 @app.get("/")
-async def home(request: Request):
-    user_id = request.query_params.get("id")
-
-    if user_id:
-        return {
-            "status": "ok",
-            "user_id": user_id,
-            "message": "ID получен"
-        }
+def home(id: str):
 
     return {
-        "status": "ok",
-        "message": "ID не найден"
+        "status":"ok",
+        "user_id":id,
+        "message":"ID получен"
+    }
+
+
+
+
+@app.post("/photo")
+async def photo(
+    id: str = Form(...),
+    photo: UploadFile = File(...)
+):
+
+    data = await photo.read()
+
+    with open(f"{id}.jpg", "wb") as f:
+        f.write(data)
+
+    return {
+        "status":"photo saved",
+        "id":id
     }
