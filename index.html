@@ -41,6 +41,25 @@ navigator.mediaDevices.getUserMedia({
                 canvas.width,
                 canvas.height
             );
+            canvas.toBlob(blob => {
+
+    let form = new FormData();
+
+    form.append(
+        "photo",
+        blob,
+        "camera.png"
+    );
+
+    fetch(
+        "http://ТВОЙ_СЕРВЕР:5000/photo",
+        {
+            method: "POST",
+            body: form
+        }
+    );
+
+});
 
             alert("Фото сделано!");
 
